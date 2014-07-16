@@ -107,7 +107,7 @@ void BattlePetMgr::SaveToDb(SQLTransaction& trans)
         {
             case BATTLE_PET_DB_STATE_DELETE:
             {
-                PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ACCOUNT_BATTLE_PET);
+                PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(LOGIN_DEL_ACCOUNT_BATTLE_PET);
                 stmt->setUInt64(0, battlePet->GetId());
                 trans->Append(stmt);
 
@@ -118,11 +118,11 @@ void BattlePetMgr::SaveToDb(SQLTransaction& trans)
             }
             case BATTLE_PET_DB_STATE_SAVE:
             {
-                PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ACCOUNT_BATTLE_PET);
+                PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(LOGIN_DEL_ACCOUNT_BATTLE_PET);
                 stmt->setUInt64(0, battlePet->GetId());
                 trans->Append(stmt);
 
-                stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_ACCOUNT_BATTLE_PET);
+                stmt = CharacterDatabase.GetPreparedStatement(LOGIN_INS_ACCOUNT_BATTLE_PET);
                 stmt->setUInt64(0, battlePet->GetId());
                 stmt->setUInt32(1, m_owner->GetSession()->GetAccountId());
                 stmt->setUInt16(2, battlePet->GetSpecies());
@@ -199,11 +199,11 @@ void BattlePetMgr::SaveSlotsToDb(SQLTransaction& trans)
     if (!m_loadoutSave)
         return;
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ACCOUNT_BATTLE_PET_SLOTS);
+    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(LOGIN_DEL_ACCOUNT_BATTLE_PET_SLOTS);
     stmt->setUInt32(0, m_owner->GetSession()->GetAccountId());
     trans->Append(stmt);
 
-    stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_ACCOUNT_BATTLE_PET_SLOTS);
+    stmt = CharacterDatabase.GetPreparedStatement(LOGIN_INS_ACCOUNT_BATTLE_PET_SLOTS);
     stmt->setUInt32(0, m_owner->GetSession()->GetAccountId());
     stmt->setUInt64(1, GetLoadoutSlot(BATTLE_PET_LOADOUT_SLOT_1));
     stmt->setUInt64(2, GetLoadoutSlot(BATTLE_PET_LOADOUT_SLOT_2));
