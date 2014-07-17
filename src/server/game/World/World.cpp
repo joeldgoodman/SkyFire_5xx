@@ -1642,8 +1642,8 @@ void World::SetInitialWorldSettings()
     TC_LOG_INFO("server.loading", "Loading Achievements...");
     sAchievementMgr->LoadAchievementReferenceList();
     TC_LOG_INFO("server.loading", "Loading Achievement Criteria Lists...");
-    sAchievementMgr->LoadAchievementCriteriaList();
-    TC_LOG_INFO("server.loading", "Loading Achievement Criteria Data...");
+    sAchievementMgr->LoadAchievementCriteriaAndConditionList();
+    TC_LOG_INFO("server.loading", "Loading Achievement Criteria and Condition Data...");
     sAchievementMgr->LoadAchievementCriteriaData();
     TC_LOG_INFO("server.loading", "Loading Achievement Rewards...");
     sAchievementMgr->LoadRewards();

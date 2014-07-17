@@ -8555,7 +8555,7 @@ void Unit::SendHealSpellLog(Unit* victim, uint32 SpellID, uint32 Damage, uint32 
     ObjectGuid casterGuid = GetGUID();
 
     // we guess size
-    WorldPacket data(SMSG_SPELLHEALLOG, 8 + 8 + 4 + 4 + 4 + 4 + 1 + 1);
+    WorldPacket data(SMSG_SPELLHEALLOG, 9 + 9 + 4 + 4 + 4 + 4 + 1);
 
     data << uint32(SpellID);
     data << uint32(Absorb);
