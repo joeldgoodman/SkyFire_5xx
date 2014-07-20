@@ -7546,15 +7546,18 @@ void Player::SendCurrencies() const
 
 void Player::SendPvpRewards() const
 {
-    WorldPacket packet(SMSG_REQUEST_PVP_REWARDS_RESPONSE, 24);
-    packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_POINTS, true);
-    packet << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_POINTS, true);
-    packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_ARENA, true);
-    packet << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_META_ARENA, true);
-    packet << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_META_RBG, true);
-    packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_POINTS, true);
-    packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_RBG, true);
-    GetSession()->SendPacket(&packet);
+    WorldPacket data(SMSG_REQUEST_PVP_REWARDS_RESPONSE, 24);
+    data << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_POINTS, true);
+    data << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_META_ARENA, true);
+    data << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_META_RBG, true);
+    data << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_META_ARENA, true);
+    data << uint32(0); // UnkMop
+    data << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_ARENA, true);
+    data << uint32(0); // unkMop2
+    data << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_RBG, true);
+    data << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_POINTS, true);
+    data << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_ARENA, true);
+    GetSession()->SendPacket(&data);
 }
 
 uint32 Player::GetCurrency(uint32 id, bool usePrecision) const
@@ -9575,9 +9578,9 @@ void Player::SendInitWorldStates(uint32 zoneid, uint32 areaid)
     builder.AppendState(0x8d4, 0x0);                   // 5
     builder.AppendState(0x8d3, 0x0);                   // 6
                                                             // 7 1 - Arena season in progress, 0 - end of season
-    builder.AppendState(0xC77, sWorld->getBoolConfig(CONFIG_ARENA_SEASON_IN_PROGRESS));
+    //builder.AppendState(0xC77, sWorld->getBoolConfig(CONFIG_ARENA_SEASON_IN_PROGRESS));
                                                             // 8 Arena season id
-    builder.AppendState(0xF3D, sWorld->getIntConfig(CONFIG_ARENA_SEASON_ID));
+    //builder.AppendState(0xF3D, sWorld->getIntConfig(CONFIG_ARENA_SEASON_ID));
 
     if (mapid == 530)                                       // Outland
     {
@@ -12530,12 +12533,31 @@ Item* Player::EquipItem(uint16 pos, Item* pItem, bool update)
                     m_weaponChangeTimer = spellProto->StartRecoveryTime;
 
                     GetGlobalCooldownMgr().AddGlobalCooldown(spellProto, m_weaponChangeTimer);
+                    ObjectGuid guid = GetGUID();
 
-                    WorldPacket data(SMSG_SPELL_COOLDOWN, 8+1+4);
-                    data << uint64(GetGUID());
-                    data << uint8(1);
+                    WorldPacket data(SMSG_SPELL_COOLDOWN, 9 + 3 + 8);
+                    data.WriteBit(guid[0]);
+                    data.WriteBit(guid[6]);
+                    data.WriteBit(1); // Missing flags
+                    data.WriteBit(guid[7]);
+                    data.WriteBit(guid[3]);
+                    data.WriteBit(guid[1]);
+                    data.WriteBit(guid[5]);
+                    size_t bitpos = data.bitwpos();
+                    data.WriteBits(1, 21);
+                    data.WriteBit(guid[2]);
+                    data.WriteBit(guid[4]);
+
                     data << uint32(cooldownSpell);
                     data << uint32(0);
+                    data.WriteByteSeq(guid[5]);
+                    data.WriteByteSeq(guid[3]);
+                    data.WriteByteSeq(guid[7]);
+                    data.WriteByteSeq(guid[4]);
+                    data.WriteByteSeq(guid[1]);
+                    data.WriteByteSeq(guid[0]);
+                    data.WriteByteSeq(guid[2]);
+                    data.WriteByteSeq(guid[6]);
                     GetSession()->SendPacket(&data);
                 }
             }
@@ -22126,11 +22148,24 @@ void Player::ContinueTaxiFlight()
 
 void Player::ProhibitSpellSchool(SpellSchoolMask idSchoolMask, uint32 unTimeMs)
 {
-                                                            // last check 2.0.10
-    WorldPacket data(SMSG_SPELL_COOLDOWN, 8+1+m_spells.size()*8);
-    data << uint64(GetGUID());
-    data << uint8(0x0);                                     // flags (0x1, 0x2)
     time_t curTime = time(NULL);
+    ObjectGuid guid = GetGUID();
+    uint32 count = 0;
+
+    WorldPacket data(SMSG_SPELL_COOLDOWN, 9 + 3 + m_spells.size() * 8);
+    data.WriteBit(guid[0]);
+    data.WriteBit(guid[6]);
+    data.WriteBit(1); // Missing flags
+    data.WriteBit(guid[7]);
+    data.WriteBit(guid[3]);
+    data.WriteBit(guid[1]);
+    data.WriteBit(guid[5]);
+    size_t bitpos = data.bitwpos();
+    data.WriteBits(0, 21);
+    data.WriteBit(guid[2]);
+    data.WriteBit(guid[4]);
+    data.FlushBits();
+
     for (PlayerSpellMap::const_iterator itr = m_spells.begin(); itr != m_spells.end(); ++itr)
     {
         if (itr->second->state == PLAYERSPELL_REMOVED)
@@ -22155,8 +22190,20 @@ void Player::ProhibitSpellSchool(SpellSchoolMask idSchoolMask, uint32 unTimeMs)
             data << uint32(unSpellId);
             data << uint32(unTimeMs);                       // in m.secs
             AddSpellCooldown(unSpellId, 0, curTime + unTimeMs/IN_MILLISECONDS);
+            count++;
         }
     }
+
+    data.PutBits(bitpos, count, 21);
+    data.WriteByteSeq(guid[5]);
+    data.WriteByteSeq(guid[3]);
+    data.WriteByteSeq(guid[7]);
+    data.WriteByteSeq(guid[4]);
+    data.WriteByteSeq(guid[1]);
+    data.WriteByteSeq(guid[0]);
+    data.WriteByteSeq(guid[2]);
+    data.WriteByteSeq(guid[6]);
+
     GetSession()->SendPacket(&data);
 }
 
