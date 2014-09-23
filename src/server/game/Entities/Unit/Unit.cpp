@@ -202,6 +202,7 @@ Unit::Unit(bool isWorldObject) :
     for (uint8 i = 0; i < MAX_GAMEOBJECT_SLOT; ++i)
         m_ObjectSlot[i] = 0;
 
+    m_overrideAutoattackSpellInfo = 0;
     m_auraUpdateIterator = m_ownedAuras.end();
 
     m_interruptMask = 0;
@@ -1822,9 +1823,12 @@ void Unit::AttackerStateUpdate (Unit* victim, WeaponAttackType attType, bool ext
     if (attType != BASE_ATTACK && attType != OFF_ATTACK)
         return;                                             // ignore ranged case
 
+
     // melee attack spell casted at main hand attack only - no normal melee dmg dealt
     if (attType == BASE_ATTACK && m_currentSpells[CURRENT_MELEE_SPELL] && !extra)
         m_currentSpells[CURRENT_MELEE_SPELL]->cast();
+    else if (m_overrideAutoattackSpellInfo)
+        CastSpell(victim, m_overrideAutoattackSpellInfo, false);
     else
     {
         // attack can be redirected to another target
@@ -8654,7 +8658,7 @@ void Unit::SendEnergizeSpellLog(Unit* victim, uint32 spellId, int32 damage, Powe
     /*if (hasPower)
     {
         data << UInt32();
-    
+
         for (var i = 0; i < count; ++i)
         {
             data << Int32();
@@ -15310,6 +15314,30 @@ uint32 Unit::GetModelForForm(ShapeshiftForm form) const
 
 uint32 Unit::GetModelForTotem(PlayerTotemType totemType)
 {
+    if (totemType == 3211)
+        totemType = SUMMON_TYPE_TOTEM_FIRE;
+
+    if (totemType == 3403)
+        totemType = SUMMON_TYPE_TOTEM_FIRE;
+
+    if (totemType == 3402)
+        totemType = SUMMON_TYPE_TOTEM_WATER;
+
+    if (totemType == 3406)
+        totemType = SUMMON_TYPE_TOTEM_AIR;
+
+    if (totemType == 3407)
+        totemType = SUMMON_TYPE_TOTEM_AIR;
+
+    if (totemType == 3405)
+        totemType = SUMMON_TYPE_TOTEM_AIR;
+
+    if (totemType == 3399)
+        totemType = SUMMON_TYPE_TOTEM_AIR;
+
+    if (totemType == 3400)
+        totemType = SUMMON_TYPE_TOTEM_EARTH;
+
     switch (getRace())
     {
         case RACE_ORC:
@@ -15399,6 +15427,23 @@ uint32 Unit::GetModelForTotem(PlayerTotemType totemType)
                     return 30784;
                 case SUMMON_TYPE_TOTEM_AIR:     // air
                     return 30781;
+            }
+            break;
+        }
+        case RACE_PANDAREN_NEUTRAL:
+        case RACE_PANDAREN_ALLIANCE:
+        case RACE_PANDAREN_HORDE:
+        {
+            switch (totemType)
+            {
+                case SUMMON_TYPE_TOTEM_FIRE:    // fire
+                    return 41670;
+                case SUMMON_TYPE_TOTEM_EARTH:   // earth
+                    return 41669;
+                case SUMMON_TYPE_TOTEM_WATER:   // water
+                    return 41671;
+                case SUMMON_TYPE_TOTEM_AIR:     // air
+                    return 41668;
             }
             break;
         }

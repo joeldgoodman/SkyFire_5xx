@@ -682,7 +682,7 @@ size_t ChatHandler::BuildChatPacket(WorldPacket& data, ChatMsg chatType, Languag
 
         case CHAT_MSG_CHANNEL:
             hasChannelName = channelName.length();
-            hasSenderName = channelName.length();
+            hasSenderName = senderName.length();
             break;
         default:
             if (gmMessage)
@@ -778,6 +778,8 @@ size_t ChatHandler::BuildChatPacket(WorldPacket& data, ChatMsg chatType, Languag
     data.WriteBit(guildGUID[1]);
     data.WriteBit(guildGUID[3]);
     data.WriteBit(guildGUID[6]);
+
+    data.FlushBits();
 
     data.WriteByteSeq(guildGUID[4]);
     data.WriteByteSeq(guildGUID[5]);

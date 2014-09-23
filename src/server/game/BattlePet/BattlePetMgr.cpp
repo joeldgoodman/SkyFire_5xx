@@ -96,6 +96,8 @@ void BattlePetMgr::LoadFromDb(PreparedQueryResult result)
 
 void BattlePetMgr::SaveToDb(SQLTransaction& trans)
 {
+    SaveSlotsToDb(trans);
+
     if (m_battlePetSet.empty())
         return;
 
@@ -105,6 +107,8 @@ void BattlePetMgr::SaveToDb(SQLTransaction& trans)
         BattlePet* battlePet = *itr++;
         switch (battlePet->GetDbState())
         {
+            case BATTLE_PET_DB_STATE_NONE: 
+                break;
             case BATTLE_PET_DB_STATE_DELETE:
             {
                 PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(LOGIN_DEL_ACCOUNT_BATTLE_PET);
@@ -142,10 +146,10 @@ void BattlePetMgr::SaveToDb(SQLTransaction& trans)
                 battlePet->SetDbState(BATTLE_PET_DB_STATE_NONE);
                 break;
             }
+            default:
+                break;
         }
     }
-
-    SaveSlotsToDb(trans);
 }
 
 void BattlePetMgr::LoadSlotsFromDb(PreparedQueryResult result)
@@ -274,8 +278,6 @@ void BattlePetMgr::UnlockLoadoutSlot(uint8 slot)
     if (slot >= BATTLE_PET_MAX_LOADOUT_SLOTS)
         return;
 
-    SetLoadoutSlot(slot, 0);
-
     switch (slot)
     {
         case BATTLE_PET_LOADOUT_SLOT_1:
@@ -288,6 +290,8 @@ void BattlePetMgr::UnlockLoadoutSlot(uint8 slot)
             SetLoadoutFlag(BATTLE_PET_LOADOUT_SLOT_FLAG_SLOT_3);
             break;
     }
+
+    SetLoadoutSlot(slot, 0);
 
     // alert client of new Battle Pet loadout slot
     SendBattlePetSlotUpdate(slot, true);
@@ -314,7 +318,7 @@ uint64 BattlePetMgr::GetLoadoutSlot(uint8 slot) const
 
 bool BattlePetMgr::HasLoadoutSlot(uint8 slot) const
 {
-    if (!m_loadoutFlags || slot > BATTLE_PET_MAX_LOADOUT_SLOTS)
+    if (!m_loadoutFlags || slot >= BATTLE_PET_MAX_LOADOUT_SLOTS)
         return false;
 
     switch (slot)
